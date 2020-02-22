@@ -1,0 +1,6 @@
+(fp_lib_table
+  (lib (name KiCad-Sensors)(type KiCad)(uri ${KIPRJMOD}/KiCad-Sensors)(options "")(descr ""))
+  (lib (name KiCad-SSD1306)(type KiCad)(uri ${KIPRJMOD}/KiCad-SSD1306)(options "")(descr ""))
+  (lib (name KiCad-Jumper)(type KiCad)(uri ${KIPRJMOD}/KiCad-Jumper)(options "")(descr ""))
+  (lib (name IoT_Messenger)(type KiCad)(uri C:/Users/Paul/Documents/GitHub/IoT_Messenger/Hardware/IoT_Messenger)(options "")(descr ""))
+)

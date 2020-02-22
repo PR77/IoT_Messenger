@@ -1,0 +1,3 @@
+(sym_lib_table
+  (lib (name IoT_Messenger-rescue)(type Legacy)(uri ${KIPRJMOD}/IoT_Messenger-rescue.lib)(options "")(descr ""))
+)
