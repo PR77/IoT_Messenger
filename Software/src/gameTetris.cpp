@@ -50,18 +50,20 @@ const int16_t melody[] = {
     NOTE_D5, 2, NOTE_B4, 2,
     NOTE_C5, 2, NOTE_A4, 2,
     NOTE_GS4, 2, NOTE_B4, 4, REST, 8,
+
     NOTE_E5, 2, NOTE_C5, 2,
     NOTE_D5, 2, NOTE_B4, 2,
     NOTE_C5, 4, NOTE_E5, 4, NOTE_A5, 2,
     NOTE_GS5, 2,
 
+    REST, 4
 };
 
 //=============================================================================
 // Tetris tune defines and constants
 //=============================================================================
 
-#define NOTES_COUNT             sizeof(melody) / (sizeof(melody[0]) / 2)
+#define NOTES_COUNT             (sizeof(melody) / sizeof(melody[0])) / 2
 #define TEMPO                   144
 
 // Whole note duration is based on 60 seconds / TEMP, 4 beats
@@ -87,7 +89,12 @@ void gameTetrisInitialise(void) {
 }
 
 void gameTetrisLoopMusic(void) {
-    int divider = 0, noteDuration = 0;
+    int16_t divider = 0;
+    uint16_t noteDuration = 0;
+
+    if (gameTetrisObject.currentNoteIndex >= (NOTES_COUNT * 2)) {
+        gameTetrisObject.currentNoteIndex = 0;
+    }
 
     // calculates the duration of each note
     divider = melody[gameTetrisObject.currentNoteIndex + 1];
@@ -100,19 +107,15 @@ void gameTetrisLoopMusic(void) {
         noteDuration *= 1.5; // increases the duration in half for dotted notes
     }
 
+    gameTetrisObject.noteDelayTimer = noteDuration;
+
     // stop the waveform generation before the next note.
     noTone(BUZZER_PIN);
 
     // we only play the note for 90% of the duration, leaving 10% as a pause
     tone(BUZZER_PIN, melody[gameTetrisObject.currentNoteIndex], noteDuration * 0.9);
 
-    if (gameTetrisObject.currentNoteIndex < (NOTES_COUNT * 2)) {
-        gameTetrisObject.currentNoteIndex += 2;
-    } else {
-        gameTetrisObject.currentNoteIndex = 0;
-    }
-
-    gameTetrisObject.noteDelayTimer = noteDuration;
+    gameTetrisObject.currentNoteIndex += 2;
 }
 
 //=============================================================================

@@ -129,7 +129,7 @@ typedef struct {
 
     gameTetrisState_e gameTetrisState;
     uint32_t refreshTimer;
-    uint32_t noteDelayTimer;
+    uint16_t noteDelayTimer;
     uint16_t currentNoteIndex;
 
 } gameTetrisObject_s;

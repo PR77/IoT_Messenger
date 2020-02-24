@@ -500,6 +500,9 @@ void loop() {
         case uiGlobalUXTetris:
         {
             if (gameTetrisCyclic((OLEDDisplay *)&display, &upButton, &downButton, &enterButton, &menuButton, &uiRemainingBudget) == gameTetrisStateExit) {
+
+                // Update last UI upadate timer with current time to avoid frame skipping
+                ui.getUiState()->lastUpdate = currentTime;
                 uiGlobalState = uiGlobalUXActive;
             }
         }
@@ -508,6 +511,9 @@ void loop() {
         case uiGlobalUXDino:
         {
             if (gameDinoCyclic((OLEDDisplay *)&display, &upButton, &menuButton, &uiRemainingBudget) == gameDinoStateExit) {
+
+                // Update last UI upadate timer with current time to avoid frame skipping
+                ui.getUiState()->lastUpdate = currentTime;
                 uiGlobalState = uiGlobalUXActive;
             }
         }
