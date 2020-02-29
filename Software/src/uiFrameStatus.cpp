@@ -8,8 +8,17 @@ void uiFrameStatus(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, i
     display->setTextAlignment(TEXT_ALIGN_LEFT);
     display->setFont(ArialMT_Plain_10);
 
-    statusText = "IP: " + WiFi.localIP().toString();
-    statusText += ", " + String(WiFi.RSSI());
+    if (((WiFi.getMode() == WIFI_STA) && (WiFi.status() == WL_CONNECTED))) {
+        statusText = "IP: ";
+        statusText += WiFi.localIP().toString();
+        statusText += ", " + String(WiFi.RSSI());
+    } else if (WiFi.getMode() == WIFI_AP) {
+        statusText = "AP IP: ";
+        statusText += WiFi.softAPIP().toString();
+    } else {
+        statusText = "IP ERROR";
+    }
+
     display->drawString(0 + x, 11 + y, statusText);
 
     statusText = "FS: " + String(ESP.getFlashChipRealSize() / (1024*1024)) + "MB";

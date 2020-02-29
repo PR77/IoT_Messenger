@@ -330,7 +330,7 @@ void setup() {
     display.resetDisplay();
     display.flipScreenVertically();
 
-    // Setup AP or connect to WiFi. AP if no wifi.config file exists.
+    // AP if no wifi.config file exists or if UP Button pressed for 1 second.
     if (!SPIFFS.exists("/wifi.conf")) {
         apMode = true;
     } else {
