@@ -20,6 +20,8 @@ void uiFrameBattery(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, 
             batteryStatusObject.batteryVoltageSamples[i] = 0;
         }
 
+        // set refreshTimer to currentTime to ensure delay when frame shown
+        batteryStatusObject.refreshTimer = currentTime;
         batteryStatusObject.currentSample = 0;
         batteryStatusObject.initialised = true;
     }
