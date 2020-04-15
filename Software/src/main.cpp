@@ -27,6 +27,7 @@
 #include "uiFrameSensor.h"
 #include "uiFrameTetris.h"
 #include "uiFrameDino.h"
+#include "uiFrameBattery.h"
 #include "gameDino.h"
 #include "gameTetris.h"
 
@@ -93,9 +94,9 @@ SSD1306 display(0x3C, 4, 5, GEOMETRY_128_32);
 OLEDDisplayUi ui(&display);
 
 OverlayCallback overlays[] = { uiOverlay };
-FrameCallback frames[] = { uiFrameStatus, uiFrameMessage, uiFrameTime, uiFrameSensor, uiFrameTetris, uiFrameDino };
+FrameCallback frames[] = { uiFrameStatus, uiFrameBattery, uiFrameMessage, uiFrameTime, uiFrameSensor, uiFrameTetris, uiFrameDino };
 int overlaysCount = 1;
-int frameCount = 6;
+int frameCount = 7;
 
 messageObject_s uiMessageObject = {"#IoT ... IoT ... IoT", false, false};
 
@@ -527,6 +528,7 @@ void loop() {
     if (uiRemainingBudget > 0) {
         httpServer.handleClient();
         beeper.Update();
+        MDNS.update();
 
         if ((currentTime - lastDhtUpdateTime) >=  2000) {
             dhtTempAndHumidity = dht.getTempAndHumidity();
