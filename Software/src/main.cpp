@@ -80,6 +80,8 @@ const uint8_t BeepCount = 3;
 
 const uint8_t dhtSensorPin = 0;
 
+const uint8_t DeepSleepPin = 16;
+
 //=============================================================================
 // Global objects for Wifi and ESP specifics
 //=============================================================================
@@ -318,6 +320,10 @@ void setup() {
     uint8_t connectionProgress = 0;
     bool apMode = false;
 
+    // Initialize deep sleep pin to allow for wakeup
+    pinMode(DeepSleepPin, OUTPUT);
+    digitalWrite(DeepSleepPin, LOW);
+
     // Initialize File System
     SPIFFS.begin();
 
@@ -454,35 +460,43 @@ void setup() {
 //=============================================================================
 void loop() {
 
+    static beepHandler_t previousBeeperState = beepHandlerIdle;
     uint32_t currentTime = millis();
     uint16_t uiRemainingBudget = 0;
-
-    /*
-    if (newBeeperStatusReceived == true) {
-        if (beepHandlerIdle == beeper.GetBeeperState()) {
-            pinMode(DownPin, INPUT_PULLUP);
-            newBeeperStatusReceived = false;
-        }
-    }
-    */
 
     menuButton.Update();
     enterButton.Update();
     upButton.Update();
-    if (beepHandlerIdle == beeper.GetBeeperState()) {
+
+    // Only debounce downButton if beeper is idle (not blocked or not active)
+    if (beeper.GetBeeperState() == beepHandlerIdle) {
+        if (previousBeeperState != beepHandlerIdle) {
+            previousBeeperState = beepHandlerIdle;
+
+            // Once beeper is finished, set pin to input again
+            pinMode(DownPin, INPUT_PULLUP);
+        }
+
         downButton.Update();
+    } else {
+        // Beeper blocked or active so save previous state for edge detection
+        previousBeeperState = beeper.GetBeeperState();
     }
 
     switch (uiGlobalState) {
         case uiGlobalUXActive:
         {
-            if (ui.getUiState()->currentFrame == 4) {
+            if (ui.getUiState()->currentFrame == 5) {
                 if (enterButton.clicks > 0) {
+
+                    // Block beeper to prevent clickButton detecting button
+                    // pressed when beeper is active
+                    beeper.RequestBlock();
                     uiGlobalState = uiGlobalUXTetris;
                 }
             }
 
-            if (ui.getUiState()->currentFrame == 5) {
+            if (ui.getUiState()->currentFrame == 6) {
                 if (enterButton.clicks > 0) {
                     uiGlobalState = uiGlobalUXDino;
                 }
@@ -501,6 +515,9 @@ void loop() {
         case uiGlobalUXTetris:
         {
             if (gameTetrisCyclic((OLEDDisplay *)&display, &upButton, &downButton, &enterButton, &menuButton, &uiRemainingBudget) == gameTetrisStateExit) {
+
+                // Unblocker beeper will cause pinMode to be set back to input
+                beeper.RequestUnblock();
 
                 // Update last UI upadate timer with current time to avoid frame skipping
                 ui.getUiState()->lastUpdate = currentTime;
@@ -542,6 +559,13 @@ void loop() {
 
             ledNowOff = true;
             lastLedUpdateTime = currentTime;
+        }
+
+        if (downButton.clicks < 0) {
+            // If DOWN button held for longer than 1 second go to sleep
+            display.displayOff();
+            digitalWrite(DeepSleepPin, HIGH);
+            ESP.deepSleep(ESP.deepSleepMax(), WAKE_RF_DEFAULT);
         }
     }
 }

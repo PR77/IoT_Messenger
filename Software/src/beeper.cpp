@@ -92,6 +92,10 @@ void Beeper::Update() {
         }
         break;
 
+        case beepHandlerBlockBeeper:
+            break;
+
+        case beepHandlerUnblockBeeper:
         default:
             _state = beepHandlerIdle;
             _processedBeepCount = 0;
@@ -102,6 +106,14 @@ void Beeper::Update() {
 
 void Beeper::RequestBeeper(uint8_t numberOfBeeps) {
     _numberOfBeeps = numberOfBeeps;
+}
+
+void Beeper::RequestBlock() {
+    _state = beepHandlerBlockBeeper;
+}
+
+void Beeper::RequestUnblock() {
+    _state = beepHandlerUnblockBeeper;
 }
 
 beepHandler_t Beeper::GetBeeperState() {

@@ -12,7 +12,9 @@ typedef enum {
     beepHandlerIdle = 0,
     beepHandlerSoundPhase,
     beepHandlerPausePhase,
-    beepHandlerRepeatCheck
+    beepHandlerRepeatCheck,
+    beepHandlerBlockBeeper,
+    beepHandlerUnblockBeeper
 } beepHandler_t;
 
 //=============================================================================
@@ -29,6 +31,9 @@ class Beeper
 
         void Update();
         void RequestBeeper(uint8_t numberOfBeeps);
+        void RequestBlock();
+        void RequestUnblock();
+
         beepHandler_t GetBeeperState();
 
         uint16_t beeperFrequency;

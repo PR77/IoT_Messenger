@@ -28,7 +28,11 @@ void uiFrameBattery(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, 
 
     if ((currentTime - batteryStatusObject.refreshTimer) >=  BATTERY_SAMPLE_INTERNAL_MS) {
         uint8_t sampleIndex = batteryStatusObject.currentSample;
-        uint8_t batteryVoltage = (uint8_t)((analogRead(A0) / 1023.0) * 20.0);
+
+        // batteryVoltage will only plot voltages from 3 volts;
+        // VBat = 3, when Y = 0, VBat = 4.42, when Y = 20.
+        // Negative values not considered
+        uint8_t batteryVoltage = (uint8_t)(((analogRead(A0) - 692) / 331.0) * 20.0);
 
         batteryStatusObject.refreshTimer = currentTime;
 
