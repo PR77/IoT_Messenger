@@ -46,7 +46,7 @@ All of the interfacing with the hardware features is via HTTP Server GET and POS
 |/sensor |GET |none      |Read environmental sensor data (DHT11)|
 |/message|POST|text      |Write a message to the buffer         |
 |/led    |POST|colour    |Set RGB LED colour                    |
-|/beeper |POST|none      |Beep piezo beeper (fixed to 3 beeps)  |
+|/beeper |POST|count     |Beep piezo beeper                     |
 
 ### Fun Stuff
 Of course. Check out my IoT Messenger playing the Tetris game theme music or Dino Jump. Videos are in the Images folder.
