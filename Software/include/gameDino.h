@@ -3,7 +3,7 @@
 
 #include "Arduino.h"
 
-#include "clickButton.h"
+#include <clickButton.h>
 
 #include <OLEDDisplay.h>
 #include <OLEDDisplayFonts.h>
@@ -13,7 +13,7 @@
 // Defines
 //=============================================================================
 
-#define DINO_GAME_REFRESH               20
+#define DINO_GAME_REFRESH               33  // 30 FPS
 
 #define DINO_SPRITE_WIDTH               16
 #define DINO_SPRITE_HEIGHT              13
@@ -23,16 +23,16 @@
 #define CLOUD_SPRITE_WIDTH              16
 #define CLOUD_SPRITE_HEIGHT             5
 #define CLOUD_SCROLL_STEP               1
-#define CLOUD_REFRESH_DELAY             5
+#define CLOUD_REFRESH_DELAY             3
 
 #define MAX_DIRT_COUNT                  3
 #define MAX_OBSTACLES                   1
 #define OBSTACLE_SCROLL_STEP            1
-#define OBSTACLE_REFRESH_DELAY          5
+#define OBSTACLE_REFRESH_DELAY          3
 
 #define GAME_OVER_FLASH_COUNT           6
 #define GAME_OVER_FLASH_STEP            1
-#define GAME_OVER_REFRESH_DELAY         5
+#define GAME_OVER_REFRESH_DELAY         3
 
 //=============================================================================
 // Types

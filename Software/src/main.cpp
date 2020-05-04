@@ -17,8 +17,10 @@
 #include <NTPClient.h>
 #include <DHTesp.h>
 
-#include "clickButton.h"
-#include "beeper.h"
+#include <clickButton.h>
+#include <beeperControl.h>
+#include <batteryHistogram.h>
+
 #include "uiGlobal.h"
 #include "uiOverlay.h"
 #include "uiFrameStatus.h"
@@ -27,9 +29,13 @@
 #include "uiFrameSensor.h"
 #include "uiFrameTetris.h"
 #include "uiFrameDino.h"
+#include "uiFrameTunnel.h"
+#include "uiFrameStars.h"
 #include "uiFrameBattery.h"
 #include "gameDino.h"
 #include "gameTetris.h"
+#include "gameTunnel.h"
+#include "gameStars.h"
 
 //=============================================================================
 // Types
@@ -76,7 +82,6 @@ const uint8_t UpPin = 12;
 const uint8_t DownPin = 13;
 
 const uint8_t BeeperPin = 13;
-const uint8_t BeepCount = 3;
 
 const uint8_t dhtSensorPin = 0;
 
@@ -96,9 +101,9 @@ SSD1306 display(0x3C, 4, 5, GEOMETRY_128_32);
 OLEDDisplayUi ui(&display);
 
 OverlayCallback overlays[] = { uiOverlay };
-FrameCallback frames[] = { uiFrameStatus, uiFrameBattery, uiFrameMessage, uiFrameTime, uiFrameSensor, uiFrameTetris, uiFrameDino };
+FrameCallback frames[] = { uiFrameStatus, uiFrameBattery, uiFrameMessage, uiFrameTime, uiFrameSensor, uiFrameTetris, uiFrameDino, uiFrameTunnel, uiFrameStars };
 int overlaysCount = 1;
-int frameCount = 7;
+int frameCount = 9;
 
 messageObject_s uiMessageObject = {"#IoT ... IoT ... IoT", false, false};
 
@@ -135,12 +140,17 @@ ClickButton downButton(DownPin, LOW, CLICKBTN_PULLUP);
 //=============================================================================
 // Global objects for beeper object
 //=============================================================================
-Beeper beeper(BeeperPin);
+BeeperControl beeper(BeeperPin);
+
+//=============================================================================
+// Global objects for battery object
+//=============================================================================
+BatteryHistogram battery(true);
 
 //=============================================================================
 // Global objects for UX
 //=============================================================================
-uiGlobalObject_s uiGlobalObject = {&uiMessageObject, &dhtTempAndHumidity, &timeClient};
+uiGlobalObject_s uiGlobalObject = {&uiMessageObject, &dhtTempAndHumidity, &timeClient, &battery};
 
 //=============================================================================
 // Function prototypes
@@ -153,6 +163,7 @@ void handleWebRequests(void);
 void handleSensor(void);
 void handleMessage(void);
 void handleLED(void);
+void handleBeeper(void);
 
 //=============================================================================
 // Helper function
@@ -287,18 +298,27 @@ void handleSensor() {
 void handleMessage() {
     // curl -X POST IoTMessenger.local/message?text={TEXT MSG}"
 
+    String messageRequestResponse = String();
+
     if (httpServer.hasArg("text")) {
 
         uiMessageObject.receivedMessage = httpServer.arg("text");
         uiMessageObject.newMessageReceived = true;
         uiMessageObject.messageRead = false;
+
+        messageRequestResponse = "{\"success\":1}";
+
+    } else {
+        messageRequestResponse = "{\"no message specified\":2}";
     }
 
-    httpServer.send(200, "text/plain", "{\"success\":1}");
+    httpServer.send(200, "text/plain", messageRequestResponse);
 }
 
 void handleLED() {
     // curl -X POST IoTMessenger.local/led?colour=%23{RRGGBB}"
+
+    String ledRequestResponse = String();
 
     if (httpServer.hasArg("colour")) {
         HtmlColor pixelColour = HtmlColor();
@@ -306,9 +326,34 @@ void handleLED() {
 
         rgbLed.SetPixelColor(0, pixelColour);
         rgbLed.Show();
+
+        ledRequestResponse = "{\"success\":1}";
+    } else {
+        ledRequestResponse = "{\"no colour specified\":3}";
     }
 
-    httpServer.send(200, "text/plain", "{\"success\":1}");
+    httpServer.send(200, "text/plain", ledRequestResponse);
+}
+
+void handleBeeper() {
+    // curl -X POST IoTMessenger.local/beeper?count={BEEPS}"
+
+    String beeperRequestResponse = String();
+
+    if (beeper.GetBeeperState() == beepHandlerIdle) {
+        if (httpServer.hasArg("count")) {
+            beeper.RequestBeeper(httpServer.arg("count").toInt());
+
+            beeperRequestResponse = "{\"success\":1}";
+        } else {
+            beeperRequestResponse = "{\"no count specified\":4}";
+        }
+    }
+    else {
+        beeperRequestResponse = "{\"busy\":5}";
+    }
+
+    httpServer.send(200, "text/plain", beeperRequestResponse);
 }
 
 //=============================================================================
@@ -320,9 +365,15 @@ void setup() {
     uint8_t connectionProgress = 0;
     bool apMode = false;
 
+    // Initialise serial object
+    Serial.begin(115200);
+
     // Initialize deep sleep pin to allow for wakeup
     pinMode(DeepSleepPin, OUTPUT);
     digitalWrite(DeepSleepPin, LOW);
+
+    // Initialise battery charge state GetBatteryHistogram
+    battery.Init();
 
     // Initialize File System
     SPIFFS.begin();
@@ -372,6 +423,7 @@ void setup() {
         staPassword = fsWifiConfig.readStringUntil(',');
         fsWifiConfig.close();
 
+        WiFi.setSleepMode(WIFI_NONE_SLEEP);
         WiFi.mode(WIFI_STA);
         WiFi.begin(staSSID, staPassword);
 
@@ -423,13 +475,7 @@ void setup() {
     // Assign server helper functions
     httpServer.on("/", handleRoot);
     httpServer.on("/list", HTTP_GET, handleFileList);
-    httpServer.on("/upload", HTTP_POST, []() {
-        httpServer.send(200, "text/plain", "{\"success\":1}");
-    }, handleFileUpload);
-    httpServer.on("/format", HTTP_POST, []() {
-        SPIFFS.format();
-        httpServer.send(200, "text/plain", "{\"success\":1}");
-    });
+    httpServer.on("/sensor", HTTP_GET, handleSensor);
     httpServer.on("/info", HTTP_GET, []() {
         String spiffsInfo = String();
         FSInfo fsInfo;
@@ -441,13 +487,19 @@ void setup() {
         spiffsInfo += " CPU Freq: " + String(ESP.getCpuFreqMHz());
         httpServer.send(200, "text/plain", spiffsInfo);
     });
-    httpServer.on("/sensor", HTTP_GET, handleSensor);
-    httpServer.on("/message", HTTP_POST, handleMessage);
-    httpServer.on("/led", HTTP_POST, handleLED);
-    httpServer.on("/beeper", HTTP_POST, []() {
-        beeper.RequestBeeper(BeepCount);
+
+    httpServer.on("/upload", HTTP_POST, []() {
+        httpServer.send(200, "text/plain", "{\"success\":1}");
+    }, handleFileUpload);
+
+    httpServer.on("/format", HTTP_POST, []() {
+        SPIFFS.format();
         httpServer.send(200, "text/plain", "{\"success\":1}");
     });
+
+    httpServer.on("/message", HTTP_POST, handleMessage);
+    httpServer.on("/led", HTTP_POST, handleLED);
+    httpServer.on("/beeper", HTTP_POST, handleBeeper);
 
     httpServer.onNotFound(handleWebRequests);
 
@@ -502,6 +554,18 @@ void loop() {
                 }
             }
 
+            if (ui.getUiState()->currentFrame == 7) {
+                if (enterButton.clicks > 0) {
+                    uiGlobalState = uiGlobalUXTunnel;
+                }
+            }
+
+            if (ui.getUiState()->currentFrame == 8) {
+                if (enterButton.clicks > 0) {
+                    uiGlobalState = uiGlobalUXStars;
+                }
+            }
+
             uiRemainingBudget = ui.update();
 
             if (menuButton.clicks > 0) {
@@ -537,6 +601,28 @@ void loop() {
         }
         break;
 
+        case uiGlobalUXTunnel:
+        {
+            if (gameTunnelCyclic((OLEDDisplay *)&display, &menuButton, &uiRemainingBudget) == gameTunnelStateExit) {
+
+                // Update last UI upadate timer with current time to avoid frame skipping
+                ui.getUiState()->lastUpdate = currentTime;
+                uiGlobalState = uiGlobalUXActive;
+            }
+        }
+        break;
+
+        case uiGlobalUXStars:
+        {
+            if (gameStarsCyclic((OLEDDisplay *)&display, &menuButton, &uiRemainingBudget) == gameStarsStateExit) {
+
+                // Update last UI upadate timer with current time to avoid frame skipping
+                ui.getUiState()->lastUpdate = currentTime;
+                uiGlobalState = uiGlobalUXActive;
+            }
+        }
+        break;
+
         default:
             uiGlobalState = uiGlobalUXActive;
             break;
@@ -545,6 +631,7 @@ void loop() {
     if (uiRemainingBudget > 0) {
         httpServer.handleClient();
         beeper.Update();
+        battery.Update();
         MDNS.update();
 
         if ((currentTime - lastDhtUpdateTime) >=  2000) {

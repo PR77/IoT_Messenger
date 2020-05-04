@@ -120,7 +120,6 @@ typedef enum {
 
     gameTetrisStateIdle = 0,
     gameTetrisStateRunning,
-    gameTetrisStateGameOver,
     gameTetrisStateExit
 
 } gameTetrisState_e;

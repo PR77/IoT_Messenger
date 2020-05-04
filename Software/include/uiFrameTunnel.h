@@ -1,5 +1,5 @@
-#ifndef UI_FRAME_BATTERY
-#define UI_FRAME_BATTERY
+#ifndef UI_FRAME_TUNNEL
+#define UI_FRAME_TUNNEL
 
 #include "Arduino.h"
 
@@ -11,6 +11,6 @@
 // Prototypes
 //=============================================================================
 
-void uiFrameBattery(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y);
+void uiFrameTunnel(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y);
 
-#endif // UI_FRAME_BATTERY
+#endif // UI_FRAME_TUNNEL

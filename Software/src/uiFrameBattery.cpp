@@ -1,56 +1,34 @@
+#include "uiGlobal.h"
+#include <batteryHistogram.h>
 #include "uiFrameBattery.h"
 
 #include <ESP8266WiFi.h>
 
 //=============================================================================
-// Global object
+// Defines
 //=============================================================================
 
-batteryStatusObject_s batteryStatusObject;
+#define BATTERY_AXIS_X_LENGTH           128
+#define BATTERY_AXIS_Y_HEIGHT           20
+
+//=============================================================================
+// Voltage graph co-ordinates
+//=============================================================================
+
+/*
+0,0                                                                       127,0
+                                                   [RESERVED FOR FRAME OVERLAY]
+| < (0,11)
+|______________________________________________________________________________
+0,31                                                                     127,31
+*/
 
 //=============================================================================
 // Battery status monitor
 //=============================================================================
 
 void uiFrameBattery(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y) {
-    uint32_t currentTime = millis();
-
-    if (batteryStatusObject.initialised == false) {
-        for (uint8_t i = 0; i < BATTERY_VOLTAGE_SAMPLES_MAX; i++) {
-            batteryStatusObject.batteryVoltageSamples[i] = 0;
-        }
-
-        // set refreshTimer to currentTime to ensure delay when frame shown
-        batteryStatusObject.refreshTimer = currentTime;
-        batteryStatusObject.currentSample = 0;
-        batteryStatusObject.initialised = true;
-    }
-
-    if ((currentTime - batteryStatusObject.refreshTimer) >=  BATTERY_SAMPLE_INTERNAL_MS) {
-        uint8_t sampleIndex = batteryStatusObject.currentSample;
-
-        // batteryVoltage will only plot voltages from 3 volts;
-        // VBat = 3, when Y = 0, VBat = 4.42, when Y = 20.
-        // Negative values not considered
-        uint8_t batteryVoltage = (uint8_t)(((analogRead(A0) - 692) / 331.0) * 20.0);
-
-        batteryStatusObject.refreshTimer = currentTime;
-
-        // stuff a new sample into the sample array
-        batteryStatusObject.batteryVoltageSamples[sampleIndex] = batteryVoltage;
-
-        if (sampleIndex == BATTERY_VOLTAGE_SAMPLES_MAX) {
-            // sample array full, so now make it a sliding window array
-
-            for (uint8_t i = 0; i < BATTERY_VOLTAGE_SAMPLES_MAX; i++) {
-                batteryStatusObject.batteryVoltageSamples[i] = batteryStatusObject.batteryVoltageSamples[i + 1];
-            }
-        } else {
-            sampleIndex++;
-        }
-
-        batteryStatusObject.currentSample = sampleIndex;
-    }
+    uint16_t *batteryVoltageSamples = (*(uiGlobalObject_s *)(state->userData)).battery_p->GetBatteryHistogram();
 
     // draw axis'
     display->drawHorizontalLine(0 + x, 31 + y, BATTERY_AXIS_X_LENGTH);
@@ -59,7 +37,16 @@ void uiFrameBattery(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, 
     // draw samples
     if (state->frameState == FIXED) {
         for (uint8_t i = 0; i < BATTERY_VOLTAGE_SAMPLES_MAX; i++) {
-            display->drawLine(i + 1, 31, i + 1, 31 - batteryStatusObject.batteryVoltageSamples[i]);
+
+            // batteryVoltage will only plot voltages from 3 volts;
+            // VBat = 3, when Y = 0, VBat = 4.42, when Y = 20.
+            // Negative values not considered
+            uint16_t sample = (uint16_t)(((batteryVoltageSamples[i] - 692) / 331.0) * 20.0);
+
+            if (sample > 0) {
+                // Only draw voltage if sample contains actual data
+                display->drawLine(i, 31 - sample, i, 31);
+            }
         }
     }
 }

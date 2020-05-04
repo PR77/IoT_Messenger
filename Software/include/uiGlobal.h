@@ -10,6 +10,8 @@
 #include <NTPClient.h>
 #include <DHTesp.h>
 
+#include <batteryHistogram.h>
+
 //=============================================================================
 // Types
 //=============================================================================
@@ -18,7 +20,9 @@ typedef enum {
 
     uiGlobalUXActive = 0,
     uiGlobalUXTetris,
-    uiGlobalUXDino
+    uiGlobalUXDino,
+    uiGlobalUXTunnel,
+    uiGlobalUXStars
 
 } uiGlobalState_e;
 
@@ -35,6 +39,7 @@ typedef struct {
     messageObject_s *messageObject_p;
     TempAndHumidity *dhtTempAndHumidity_p;
     NTPClient *ntpClient_p;
+    BatteryHistogram *battery_p;
 
 } uiGlobalObject_s;
 

@@ -3,6 +3,10 @@
 
 #include <ESP8266WiFi.h>
 
+//=============================================================================
+// Message sprite
+//=============================================================================
+
 const uint8_t newMessage[] PROGMEM = {
 
     B11111111,
@@ -12,6 +16,21 @@ const uint8_t newMessage[] PROGMEM = {
     B10000001,
     B10000001,
     B11111111,
+};
+
+//=============================================================================
+// Wifi sprite
+//=============================================================================
+
+const uint8_t wifiConnected[] PROGMEM = {
+
+    B00111100,
+    B11000011,
+    B00111100,
+    B01000010,
+    B00011000,
+    B00100100,
+    B00011000,
 };
 
 void uiOverlay(OLEDDisplay *display, OLEDDisplayUiState* state) {
@@ -27,7 +46,11 @@ void uiOverlay(OLEDDisplay *display, OLEDDisplayUiState* state) {
 
     display->drawString(128, 0, overlayText);
 
+    if (WiFi.status() == WL_CONNECTED) {
+        display->drawXbm(0, 2, 8, 7, wifiConnected);
+    }
+
     if ((*(uiGlobalObject_s *)(state->userData)).messageObject_p->newMessageReceived == true) {
-        display->drawXbm(0, 2, 8, 7, newMessage);
+        display->drawXbm(11, 2, 8, 7, newMessage);
     }
 }

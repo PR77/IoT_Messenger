@@ -8,7 +8,9 @@ void uiFrameStatus(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, i
     display->setTextAlignment(TEXT_ALIGN_LEFT);
     display->setFont(ArialMT_Plain_10);
 
-    if (((WiFi.getMode() == WIFI_STA) && (WiFi.status() == WL_CONNECTED))) {
+    if (WiFi.getMode() == WIFI_OFF) {
+        statusText = "WIFI OFF";
+    } else if (WiFi.getMode() == WIFI_STA) {
         statusText = "IP: ";
         statusText += WiFi.localIP().toString();
         statusText += ", " + String(WiFi.RSSI());
@@ -16,7 +18,8 @@ void uiFrameStatus(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, i
         statusText = "AP IP: ";
         statusText += WiFi.softAPIP().toString();
     } else {
-        statusText = "IP ERROR";
+        statusText = "WIFI ERROR ";
+        statusText += String(WiFi.getMode());
     }
 
     display->drawString(0 + x, 11 + y, statusText);
