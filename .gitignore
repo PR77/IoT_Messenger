@@ -1,0 +1,19 @@
+# Development environment
+Software/.pio
+Software/.vscode
+
+# Wifi code
+Software/data/wifi.conf
+
+# Mac OS specifics
+.DS_Store
+Software/data/.DS_Store
+Software/include/.DS_Store
+Software/lib/.DS_Store
+Software/src/.DS_Store
+Software/test/.DS_Store
+
+# Build
+Software/.clang_complete
+Software/.gcc-flags.json
+Software/*.ld
